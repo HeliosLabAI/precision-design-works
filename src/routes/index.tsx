@@ -46,12 +46,27 @@ export const Route = createFileRoute("/")({
 
 type Mode = "Auto" | "Plan" | "Ask" | "Build";
 
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  slash?: string;
+  status?: string;
+};
+
 const FOOTER_HINTS = [
   { cmd: "/multitask", text: "to run subagents in parallel instead of queuing them" },
   { cmd: "/create-hook", text: "to control and extend the agent loop with custom scripts" },
   { cmd: "/simplify", text: "to have Density review all changed files for code quality" },
   { cmd: "/review", text: "to have Density find bugs, regressions, and missing tests" },
   { cmd: "@file", text: "to add precise context from anywhere in your workspace" },
+];
+
+const ASSISTANT_REPLIES = [
+  "Hi — how can I help you today? I can assist with coding, debugging, exploring your project, or anything else you're working on in this workspace.",
+  "On it. I'll plan the smallest set of changes first, then implement them in order.",
+  "Got it. Let me look through the relevant files and come back with a focused diff.",
+  "Understood. I'll keep the scope tight and explain each step as I go.",
 ];
 
 function Density() {
@@ -62,15 +77,16 @@ function Density() {
   const [mode, setMode] = useState<Mode>("Auto");
   const [text, setText] = useState("");
   const [hintIdx, setHintIdx] = useState(0);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [thinking, setThinking] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Rotate footer hints
   useEffect(() => {
     const t = setInterval(() => setHintIdx((i) => (i + 1) % FOOTER_HINTS.length), 4200);
     return () => clearInterval(t);
   }, []);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const meta = e.metaKey || e.ctrlKey;
@@ -90,7 +106,6 @@ function Density() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Auto-grow textarea
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
@@ -98,9 +113,49 @@ function Density() {
     el.style.height = Math.min(el.scrollHeight, 240) + "px";
   }, [text]);
 
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages, thinking]);
+
+  const handleSend = () => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    let slash: string | undefined;
+    let body = trimmed;
+    const m = trimmed.match(/^(\/[a-zA-Z][\w-]*)\s*(.*)$/);
+    if (m) {
+      slash = m[1];
+      body = m[2];
+    }
+    const userMsg: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      text: body,
+      slash,
+    };
+    const replyIdx = messages.filter((mm) => mm.role === "user").length;
+    setMessages((prev) => [...prev, userMsg]);
+    setText("");
+    setThinking(true);
+    setTimeout(() => {
+      const reply =
+        ASSISTANT_REPLIES[Math.min(replyIdx, ASSISTANT_REPLIES.length - 1)];
+      const assistantMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        text: reply,
+        status: slash ? "Planning next moves" : undefined,
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+      setThinking(false);
+    }, 650);
+  };
+
+  const hasConversation = messages.length > 0;
+
   return (
     <div className="relative flex h-screen w-screen overflow-hidden bg-background text-foreground select-none">
-      {/* Subtle ambient grain */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.025]"
@@ -110,7 +165,6 @@ function Density() {
         }}
       />
 
-      {/* LEFT SIDEBAR (expanded) */}
       <aside
         className={`relative z-20 h-full shrink-0 border-r border-border bg-surface transition-[width] duration-300 ease-out ${
           sidebarOpen ? "w-[232px]" : "w-0"
@@ -119,75 +173,142 @@ function Density() {
         {sidebarOpen && <SidebarPanel onClose={() => setSidebarOpen(false)} />}
       </aside>
 
-      {/* MAIN COLUMN */}
       <main className="relative z-10 flex h-full min-w-0 flex-1 flex-col">
-        <TitleBar />
         <Toolbar
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((v) => !v)}
           onOpenPalette={() => setPaletteOpen(true)}
+          hasConversation={hasConversation}
+          title={messages[0]?.text}
         />
 
-        {/* Composer canvas */}
-        <div className="relative flex flex-1 flex-col items-center justify-center px-6">
-          <Composer
-            text={text}
-            setText={setText}
-            mode={mode}
-            inputRef={inputRef}
-            onOpenAdd={() => setAddMenuOpen((v) => !v)}
-            addMenuOpen={addMenuOpen}
-            onPickMode={(m) => {
-              setMode(m);
-              setModeOpen(false);
-            }}
-            modeOpen={modeOpen}
-            onToggleMode={() => setModeOpen((v) => !v)}
-          />
-          <PlanPill />
-        </div>
-
-        <FooterHint hint={FOOTER_HINTS[hintIdx]} />
+        {hasConversation ? (
+          <>
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-8">
+              <div className="mx-auto w-full max-w-[760px] space-y-4">
+                {messages.map((m) =>
+                  m.role === "user" ? (
+                    <UserBubble key={m.id} text={m.text} slash={m.slash} />
+                  ) : (
+                    <AssistantBubble key={m.id} text={m.text} status={m.status} />
+                  ),
+                )}
+                {thinking && <ThinkingIndicator />}
+              </div>
+            </div>
+            <div className="shrink-0 px-6 pb-3">
+              <div className="mx-auto w-full max-w-[760px]">
+                <Composer
+                  variant="followup"
+                  text={text}
+                  setText={setText}
+                  mode={mode}
+                  inputRef={inputRef}
+                  onSend={handleSend}
+                  onOpenAdd={() => setAddMenuOpen((v) => !v)}
+                  addMenuOpen={addMenuOpen}
+                  onPickMode={(m) => {
+                    setMode(m);
+                    setModeOpen(false);
+                  }}
+                  modeOpen={modeOpen}
+                  onToggleMode={() => setModeOpen((v) => !v)}
+                />
+              </div>
+            </div>
+            <StatusBar />
+          </>
+        ) : (
+          <>
+            <div className="relative flex flex-1 flex-col items-center justify-center px-6">
+              <Composer
+                variant="hero"
+                text={text}
+                setText={setText}
+                mode={mode}
+                inputRef={inputRef}
+                onSend={handleSend}
+                onOpenAdd={() => setAddMenuOpen((v) => !v)}
+                addMenuOpen={addMenuOpen}
+                onPickMode={(m) => {
+                  setMode(m);
+                  setModeOpen(false);
+                }}
+                modeOpen={modeOpen}
+                onToggleMode={() => setModeOpen((v) => !v)}
+              />
+              <PlanPill />
+            </div>
+            <FooterHint hint={FOOTER_HINTS[hintIdx]} />
+          </>
+        )}
       </main>
 
-      {/* COMMAND PALETTE */}
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
     </div>
   );
 }
 
-/* ───────────────────────── TitleBar ───────────────────────── */
+/* ───────────────────────── Chat bubbles ───────────────────────── */
 
-function TitleBar() {
+function UserBubble({ text, slash }: { text: string; slash?: string }) {
   return (
-    <div className="flex h-9 shrink-0 items-center gap-5 border-b border-border/70 bg-surface/80 pl-3 pr-2 text-[12.5px] text-foreground/85 backdrop-blur">
-      <div className="flex items-center gap-2 pr-2 text-foreground">
-        <DensityLogo size={16} />
-        <span className="font-medium tracking-tight">Density</span>
+    <div className="animate-fade-in rounded-2xl border border-border bg-card px-5 py-3.5 text-[14px] leading-relaxed text-foreground shadow-soft">
+      {slash && (
+        <span className="mr-1.5 font-mono text-[13px] text-[oklch(0.65_0.15_55)]">
+          {slash}
+        </span>
+      )}
+      <span>{text}</span>
+    </div>
+  );
+}
+
+function AssistantBubble({ text, status }: { text: string; status?: string }) {
+  return (
+    <div className="animate-fade-in px-2 py-1 text-[14px] leading-relaxed text-foreground/85">
+      {text}
+      {status && (
+        <div className="mt-2 text-[12.5px] text-muted-foreground">{status}</div>
+      )}
+    </div>
+  );
+}
+
+function ThinkingIndicator() {
+  return (
+    <div className="flex items-center gap-2 px-2 py-1 text-[12.5px] text-muted-foreground animate-fade-in">
+      <span className="inline-flex gap-1">
+        <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-pulse" />
+        <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-pulse [animation-delay:120ms]" />
+        <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-pulse [animation-delay:240ms]" />
+      </span>
+      Thinking
+    </div>
+  );
+}
+
+function StatusBar() {
+  return (
+    <div className="flex h-7 shrink-0 items-center justify-between border-t border-border/60 px-3 text-[11.5px] text-muted-foreground">
+      <div className="flex items-center gap-1.5">
+        <HardDriveIcon size={11} />
+        <span>Local</span>
       </div>
-      {["File", "Edit", "View", "Help"].map((m) => (
-        <button
-          key={m}
-          className="rounded px-1.5 py-0.5 text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
-        >
-          {m}
-        </button>
-      ))}
-      <div className="ml-auto flex items-center gap-1">
-        <WindowDot color="oklch(0.78 0.13 90)" />
-        <WindowDot color="oklch(0.82 0.12 140)" />
-        <WindowDot color="oklch(0.7 0.18 25)" />
+      <div className="flex items-center gap-1.5">
+        <ContextRing />
+        <span>8%</span>
       </div>
     </div>
   );
 }
 
-function WindowDot({ color }: { color: string }) {
+function ContextRing() {
   return (
-    <span
-      className="mx-[2px] inline-block size-2.5 rounded-full border border-black/5"
-      style={{ background: color }}
-    />
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="9" opacity="0.3" />
+      <path d="M12 3 a9 9 0 0 1 2.5 17.6" strokeLinecap="round" />
+    </svg>
   );
 }
 
@@ -197,17 +318,21 @@ function Toolbar({
   sidebarOpen,
   onToggleSidebar,
   onOpenPalette,
+  hasConversation,
+  title,
 }: {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
   onOpenPalette: () => void;
+  hasConversation: boolean;
+  title?: string;
 }) {
   return (
     <div className="flex h-11 shrink-0 items-center justify-between border-b border-border/60 px-2.5">
       <div className="flex items-center gap-0.5">
         <IconBtn label="Toggle sidebar" onClick={onToggleSidebar} active={sidebarOpen}>
           <SidebarIcon size={16} />
-          {!sidebarOpen && (
+          {!sidebarOpen && !hasConversation && (
             <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-accent-blue px-1 text-[9px] font-medium text-white shadow-sm">
               1
             </span>
@@ -216,6 +341,15 @@ function Toolbar({
         <IconBtn label="Search ⌘K" onClick={onOpenPalette}>
           <SearchIcon size={16} />
         </IconBtn>
+        <IconBtn label="New chat">
+          <PlusIcon size={16} />
+        </IconBtn>
+        {hasConversation && title && (
+          <div className="ml-1 flex items-center gap-1.5 px-1.5 text-[12.5px] text-foreground/80">
+            <span className="max-w-[180px] truncate">{title}</span>
+            <PrinterTinyIcon />
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
@@ -224,9 +358,6 @@ function Toolbar({
       </div>
 
       <div className="flex items-center gap-0.5">
-        <IconBtn label="More">
-          <MoreIcon size={16} />
-        </IconBtn>
         <IconBtn label="Expand">
           <ExpandIcon size={15} />
         </IconBtn>
@@ -235,6 +366,15 @@ function Toolbar({
         </IconBtn>
       </div>
     </div>
+  );
+}
+
+function PrinterTinyIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="6" y="9" width="12" height="8" rx="1.5" />
+      <path d="M8 9V5h8v4M8 17v2h8v-2" />
+    </svg>
   );
 }
 
