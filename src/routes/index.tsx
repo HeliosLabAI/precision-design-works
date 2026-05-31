@@ -607,93 +607,159 @@ const SettingsIcon = () => (
 /* ───────────────────────── Composer ───────────────────────── */
 
 function Composer({
+  variant = "hero",
   text,
   setText,
   mode,
   inputRef,
+  onSend,
   onOpenAdd,
   addMenuOpen,
   onPickMode,
   modeOpen,
   onToggleMode,
 }: {
+  variant?: "hero" | "followup";
   text: string;
   setText: (v: string) => void;
   mode: Mode;
   inputRef: React.MutableRefObject<HTMLTextAreaElement | null>;
+  onSend: () => void;
   onOpenAdd: () => void;
   addMenuOpen: boolean;
   onPickMode: (m: Mode) => void;
   modeOpen: boolean;
   onToggleMode: () => void;
 }) {
+  const isFollowup = variant === "followup";
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSend();
+    }
+  };
+
   return (
-    <div className="w-full max-w-[640px] animate-fade-in">
-      {/* Folder + Local breadcrumb */}
-      <div className="mb-3 flex items-center gap-3 px-1 text-[12.5px]">
-        <button className="flex items-center gap-1.5 rounded-md px-1 py-0.5 text-accent-blue transition hover:bg-accent">
-          <span className="font-medium">New folder (2)</span>
-          <ChevronDownIcon size={12} />
-        </button>
-        <button className="flex items-center gap-1.5 rounded-md px-1 py-0.5 text-foreground/75 transition hover:bg-accent">
-          <HardDriveIcon size={13} />
-          <span>Local</span>
-          <ChevronDownIcon size={12} />
-        </button>
-      </div>
+    <div className={`animate-fade-in ${isFollowup ? "w-full" : "w-full max-w-[640px]"}`}>
+      {!isFollowup && (
+        <div className="mb-3 flex items-center gap-3 px-1 text-[12.5px]">
+          <button className="flex items-center gap-1.5 rounded-md px-1 py-0.5 text-accent-blue transition hover:bg-accent">
+            <span className="font-medium">New folder (2)</span>
+            <ChevronDownIcon size={12} />
+          </button>
+          <button className="flex items-center gap-1.5 rounded-md px-1 py-0.5 text-foreground/75 transition hover:bg-accent">
+            <HardDriveIcon size={13} />
+            <span>Local</span>
+            <ChevronDownIcon size={12} />
+          </button>
+        </div>
+      )}
 
-      {/* Card */}
-      <div className="group relative rounded-2xl border border-border bg-card shadow-soft transition-shadow focus-within:shadow-pop focus-within:border-border-strong">
-        <textarea
-          ref={inputRef}
-          rows={1}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Plan, Build, / for skills, @ for context"
-          className="block max-h-60 w-full resize-none rounded-2xl bg-transparent px-5 pb-2 pt-4 text-[14px] leading-relaxed text-foreground placeholder:text-hint focus:outline-none"
-        />
-
-        <div className="flex items-center gap-1.5 px-2.5 pb-2.5 pt-1">
+      <div
+        className={`group relative rounded-${isFollowup ? "full" : "2xl"} border border-border bg-card shadow-soft transition-shadow focus-within:shadow-pop focus-within:border-border-strong ${
+          isFollowup ? "flex items-center gap-1 rounded-full px-2 py-1" : ""
+        }`}
+      >
+        {isFollowup && (
           <button
             onClick={onOpenAdd}
-            className={`flex size-7 items-center justify-center rounded-full border border-border bg-secondary text-foreground/70 transition hover:bg-accent active:scale-95 ${
+            className={`flex size-7 shrink-0 items-center justify-center rounded-full text-foreground/60 transition hover:bg-accent active:scale-95 ${
               addMenuOpen ? "rotate-45 bg-accent" : ""
             }`}
             aria-label="Add context"
           >
             <PlusIcon size={14} />
           </button>
+        )}
 
-          <button
-            onClick={onToggleMode}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-[12.5px] text-foreground/80 transition hover:bg-accent"
-          >
-            <span>{mode}</span>
-            <ChevronDownIcon size={12} />
-          </button>
+        <textarea
+          ref={inputRef}
+          rows={1}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder={isFollowup ? "Send follow-up" : "Plan, Build, / for skills, @ for context"}
+          className={
+            isFollowup
+              ? "block max-h-40 flex-1 resize-none bg-transparent px-1 py-1.5 text-[13.5px] leading-relaxed text-foreground placeholder:text-hint focus:outline-none"
+              : "block max-h-60 w-full resize-none rounded-2xl bg-transparent px-5 pb-2 pt-4 text-[14px] leading-relaxed text-foreground placeholder:text-hint focus:outline-none"
+          }
+        />
 
-          <div className="ml-auto flex items-center gap-1.5">
-            {text.length > 0 ? (
-              <button
-                className="flex h-8 items-center gap-1.5 rounded-full bg-foreground px-3 text-[12.5px] font-medium text-background shadow-soft transition-transform active:scale-95"
-                aria-label="Send"
-              >
-                Send
+        {isFollowup ? (
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              onClick={onToggleMode}
+              className="flex items-center gap-0.5 rounded-md px-1.5 py-1 text-[12px] text-foreground/70 transition hover:bg-accent"
+            >
+              <span>{mode}</span>
+              <ChevronDownIcon size={11} />
+            </button>
+            <button
+              className="flex size-7 items-center justify-center rounded-full text-foreground/60 transition hover:bg-accent active:scale-95"
+              aria-label="Voice"
+            >
+              <MicIcon size={13} />
+            </button>
+            <button
+              onClick={onSend}
+              className="flex size-7 items-center justify-center rounded-full bg-foreground text-background transition active:scale-95"
+              aria-label={text.length > 0 ? "Send" : "Stop"}
+            >
+              {text.length > 0 ? (
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12" />
                   <polyline points="13 6 19 12 13 18" />
                 </svg>
-              </button>
-            ) : (
-              <button
-                className="mic-pulse flex size-8 items-center justify-center rounded-full bg-foreground text-background transition active:scale-95"
-                aria-label="Voice"
-              >
-                <MicIcon size={14} />
-              </button>
-            )}
+              ) : (
+                <span className="size-2.5 rounded-[2px] bg-background" />
+              )}
+            </button>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-1.5 px-2.5 pb-2.5 pt-1">
+            <button
+              onClick={onOpenAdd}
+              className={`flex size-7 items-center justify-center rounded-full border border-border bg-secondary text-foreground/70 transition hover:bg-accent active:scale-95 ${
+                addMenuOpen ? "rotate-45 bg-accent" : ""
+              }`}
+              aria-label="Add context"
+            >
+              <PlusIcon size={14} />
+            </button>
+            <button
+              onClick={onToggleMode}
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-[12.5px] text-foreground/80 transition hover:bg-accent"
+            >
+              <span>{mode}</span>
+              <ChevronDownIcon size={12} />
+            </button>
+            <div className="ml-auto flex items-center gap-1.5">
+              {text.length > 0 ? (
+                <button
+                  onClick={onSend}
+                  className="flex h-8 items-center gap-1.5 rounded-full bg-foreground px-3 text-[12.5px] font-medium text-background shadow-soft transition-transform active:scale-95"
+                  aria-label="Send"
+                >
+                  Send
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="13 6 19 12 13 18" />
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  className="mic-pulse flex size-8 items-center justify-center rounded-full bg-foreground text-background transition active:scale-95"
+                  aria-label="Voice"
+                >
+                  <MicIcon size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
 
         {/* Add context dropdown */}
         {addMenuOpen && <AddContextMenu />}
