@@ -657,8 +657,8 @@ function Composer({
       )}
 
       <div
-        className={`group relative rounded-${isFollowup ? "full" : "2xl"} border border-border bg-card shadow-soft transition-shadow focus-within:shadow-pop focus-within:border-border-strong ${
-          isFollowup ? "flex items-center gap-1 rounded-full px-2 py-1" : ""
+        className={`group relative border border-border bg-card shadow-soft transition-shadow focus-within:shadow-pop focus-within:border-border-strong ${
+          isFollowup ? "flex items-center gap-1 rounded-full px-2 py-1" : "rounded-2xl"
         }`}
       >
         {isFollowup && (
