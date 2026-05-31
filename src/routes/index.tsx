@@ -7,7 +7,6 @@ import {
   BookIcon,
   BugSlashIcon,
   ChevronDownIcon,
-  DensityLogo,
   DiamondIcon,
   ExpandIcon,
   FolderIcon,
@@ -16,7 +15,6 @@ import {
   InfinityIcon,
   ListIcon,
   MicIcon,
-  MoreIcon,
   PanelRightIcon,
   PlusIcon,
   QuestionIcon,
@@ -25,6 +23,7 @@ import {
   SparkleIcon,
   StackIcon,
 } from "../components/density/icons";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
