@@ -70,7 +70,9 @@ function Density() {
   const [folderOpen, setFolderOpen] = useState(false);
   const [localOpen, setLocalOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [appMenu, setAppMenu] = useState<null | "File" | "Edit" | "View" | "Help">(null);
+  const [createAgentOpen, setCreateAgentOpen] = useState(false);
+  type Agent = { id: string; name: string; description: string; instructions: string; model: string; tools: string[] };
+  const [agents, setAgents] = useState<Agent[]>([]);
 
   const [mode, setMode] = useState<Mode>("Auto");
   const [text, setText] = useState("");
