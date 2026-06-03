@@ -1195,7 +1195,7 @@ function AutomationsView() {
 
 /* ───────────────────────── Command Palette ───────────────────────── */
 
-function CommandPalette({ onClose }: { onClose: () => void }) {
+function CommandPalette({ onClose, onCreateAgent }: { onClose: () => void; onCreateAgent?: () => void }) {
   const [q, setQ] = useState("");
   const agents = [
     { icon: <FunnelIcon />, label: "New Agent" },
