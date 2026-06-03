@@ -369,8 +369,8 @@ function TitleBar({
   };
   return (
     <div className="relative z-30 flex h-9 shrink-0 items-center justify-between border-b border-border/60 bg-surface/95 backdrop-blur">
-      {/* Left: app icon + menu */}
-      <div className="flex h-full items-center gap-1 pl-3">
+      {/* Left: app icon */}
+      <div className="flex h-full items-center gap-2 pl-3">
         <div className="relative flex size-5 items-center justify-center">
           <DensitySquareIcon />
           {sidebarBadge > 0 && (
@@ -379,39 +379,7 @@ function TitleBar({
             </span>
           )}
         </div>
-        <div className="ml-2 flex items-center" onMouseLeave={() => setAppMenu(null)}>
-          {menus.map((m) => (
-            <div key={m} className="relative">
-              <button
-                onClick={() => setAppMenu(appMenu === m ? null : m)}
-                onMouseEnter={() => appMenu && setAppMenu(m)}
-                className={`flex h-7 items-center rounded px-2 text-[12.5px] text-foreground/85 transition hover:bg-accent ${
-                  appMenu === m ? "bg-accent" : ""
-                }`}
-              >
-                {m}
-              </button>
-              {appMenu === m && (
-                <div className="absolute left-0 top-full z-40 mt-0.5 w-[220px] rounded-lg border border-border bg-popover p-1 shadow-pop animate-scale-in">
-                  {items[m].map((it, i) =>
-                    it.sep ? (
-                      <div key={i} className="my-1 h-px bg-border" />
-                    ) : (
-                      <button
-                        key={i}
-                        onClick={() => { it.onClick?.(); setAppMenu(null); }}
-                        className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-[12.5px] text-foreground/85 transition hover:bg-accent"
-                      >
-                        <span>{it.label}</span>
-                        {it.kbd && <span className="text-[10.5px] text-muted-foreground">{it.kbd}</span>}
-                      </button>
-                    ),
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <span className="text-[12.5px] font-medium tracking-tight text-foreground/85">Density</span>
       </div>
 
       {/* Center drag region */}
