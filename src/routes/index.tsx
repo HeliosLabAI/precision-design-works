@@ -549,8 +549,23 @@ function SidebarPanel({
 
       <div className="flex-1 overflow-y-auto px-2 pb-2 text-[13px]">
         <NavRow icon={<FunnelIcon />} label="New Agent" shortcut="Ctrl+N" active={view === "agent"} onClick={() => { setView("agent"); onNew(); }} />
+        <NavRow icon={<PlusIcon size={14} />} label="Create Agent" onClick={onCreateAgent} />
         <NavRow icon={<AutomationsIcon />} label="Automations" active={view === "automations"} onClick={() => setView("automations")} />
         <NavRow icon={<CustomizeIcon />} label="Customize" active={view === "customize"} onClick={() => setView("customize")} />
+
+        {agents.length > 0 && (
+          <>
+            <div className="mt-4 px-2 pb-1 text-[11.5px] uppercase tracking-wider text-muted-foreground/80">My Agents</div>
+            {agents.map((a) => (
+              <button key={a.id} className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[12.5px] text-foreground/85 hover:bg-accent">
+                <span className="flex size-5 items-center justify-center rounded bg-secondary text-[10px] font-medium text-foreground/80">
+                  {a.name.slice(0, 1).toUpperCase()}
+                </span>
+                <span className="flex-1 truncate">{a.name}</span>
+              </button>
+            ))}
+          </>
+        )}
 
         <div className="mt-4 flex items-center justify-between px-2 pb-1 text-[11.5px] uppercase tracking-wider text-muted-foreground/80">
           <span>Workspaces</span>
