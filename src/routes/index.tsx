@@ -725,9 +725,11 @@ const SettingsIcon = () => (
 
 function UserBubble({ text, slash }: { text: string; slash?: string }) {
   return (
-    <div className="animate-fade-in rounded-2xl border border-border bg-card px-5 py-3.5 text-[14px] leading-relaxed text-foreground shadow-soft">
-      {slash && <span className="mr-1.5 font-mono text-[13px] text-[oklch(0.65_0.15_55)]">{slash}</span>}
-      <span>{text}</span>
+    <div className="flex justify-end animate-fade-in">
+      <div className="inline-flex max-w-[80%] items-center rounded-full border border-border bg-card px-4 py-2 text-[13.5px] leading-relaxed text-foreground/90 shadow-soft">
+        {slash && <span className="mr-1.5 font-mono text-[12.5px] text-[oklch(0.65_0.15_55)]">{slash}</span>}
+        <span className="truncate">{text}</span>
+      </div>
     </div>
   );
 }
