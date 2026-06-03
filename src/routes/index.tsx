@@ -1257,7 +1257,7 @@ function CommandPalette({ onClose, onCreateAgent }: { onClose: () => void; onCre
         <div className="max-h-[60vh] overflow-y-auto p-1.5">
           {filtered.agents.length > 0 && (
             <Section title="Agent">
-              {filtered.agents.map((a, i) => <PaletteRow key={i} {...a} highlighted={hl === i} />)}
+              {filtered.agents.map((a, i) => <PaletteRow key={i} {...a} highlighted={hl === i} onClick={a.onClick} />)}
             </Section>
           )}
           {filtered.agents.length > 0 && filtered.modes.length > 0 && <div className="my-1 h-px bg-border" />}
