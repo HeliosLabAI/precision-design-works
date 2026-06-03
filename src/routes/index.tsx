@@ -522,8 +522,8 @@ function IconBtn({
 /* ───────────────────────── Sidebar ───────────────────────── */
 
 function SidebarPanel({
-  view, setView, onClose, onNew,
-}: { view: SideView; setView: (v: SideView) => void; onClose: () => void; onNew: () => void }) {
+  view, setView, onClose, onNew, onCreateAgent, agents,
+}: { view: SideView; setView: (v: SideView) => void; onClose: () => void; onNew: () => void; onCreateAgent: () => void; agents: Agent[] }) {
   const workspaces = [
     { label: "New folder (2)", icon: <FolderIcon size={14} />, active: true },
     { label: "Navigation to ceres folder", dot: "muted" as const },
