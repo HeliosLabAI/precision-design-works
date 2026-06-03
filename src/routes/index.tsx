@@ -1283,9 +1283,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </div>
   );
 }
-function PaletteRow({ icon, label, kbd, highlighted }: { icon: React.ReactNode; label: string; kbd?: string; highlighted?: boolean }) {
+function PaletteRow({ icon, label, kbd, highlighted, onClick }: { icon: React.ReactNode; label: string; kbd?: string; highlighted?: boolean; onClick?: () => void }) {
   return (
-    <button className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-[13px] transition ${
+    <button onClick={onClick} className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-[13px] transition ${
       highlighted ? "bg-accent text-foreground" : "text-foreground/85 hover:bg-accent"
     }`}>
       <span className="text-foreground/70">{icon}</span>
