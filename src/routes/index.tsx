@@ -116,7 +116,7 @@ function Density() {
         setFolderOpen(false);
         setLocalOpen(false);
         setMoreOpen(false);
-        setAppMenu(null);
+        setCreateAgentOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
