@@ -233,6 +233,8 @@ function Density() {
             <section className="relative flex min-w-0 flex-1 flex-col">
               {sideView === "automations" && sidebarOpen ? (
                 <AutomationsView />
+              ) : sideView === "create-agent" && sidebarOpen ? (
+                <CreateAgentView onCancel={() => setSideView("agent")} />
               ) : hasConversation ? (
                 <>
                   <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-6">
