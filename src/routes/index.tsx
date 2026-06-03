@@ -204,6 +204,8 @@ function Density() {
               setView={setSideView}
               onClose={() => setSidebarOpen(false)}
               onNew={newChat}
+              onCreateAgent={() => setCreateAgentOpen(true)}
+              agents={agents}
             />
           )}
         </aside>
