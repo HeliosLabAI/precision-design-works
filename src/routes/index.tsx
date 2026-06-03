@@ -320,8 +320,14 @@ function Density() {
         </main>
       </div>
 
-      {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
+      {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} onCreateAgent={() => { setPaletteOpen(false); setCreateAgentOpen(true); }} />}
       {showHidePanelTip && <HidePanelTip />}
+      {createAgentOpen && (
+        <CreateAgentModal
+          onClose={() => setCreateAgentOpen(false)}
+          onCreate={(a) => { setAgents((prev) => [...prev, a]); setCreateAgentOpen(false); }}
+        />
+      )}
     </div>
   );
 }
