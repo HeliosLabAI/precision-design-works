@@ -1214,7 +1214,8 @@ function AutomationsView() {
 
 function CommandPalette({ onClose, onCreateAgent }: { onClose: () => void; onCreateAgent?: () => void }) {
   const [q, setQ] = useState("");
-  const agents = [
+  const agents: Array<{ icon: React.ReactNode; label: string; kbd?: string; onClick?: () => void }> = [
+    { icon: <PlusIcon size={14} />, label: "Create Agent", onClick: onCreateAgent, kbd: "Ctrl Shift A" },
     { icon: <FunnelIcon />, label: "New Agent" },
     { icon: <MicIcon size={14} />, label: "Use Voice" },
     { icon: <MicIcon size={14} />, label: "Dictate", kbd: "Ctrl Shift ." },
