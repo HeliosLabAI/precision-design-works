@@ -41,7 +41,7 @@ export const Route = createFileRoute("/")({
 type Mode = "Auto" | "Plan" | "Build" | "Ask";
 type RightTab = "git" | "browser" | "preview" | "terminal" | null;
 type ChatMessage = { id: string; role: "user" | "assistant"; text: string; slash?: string; status?: string };
-type SideView = "agent" | "automations" | "customize";
+type SideView = "agent" | "automations" | "customize" | "create-agent";
 
 const FOOTER_HINTS = [
   { cmd: "/multitask", text: "to run subagents to parallelize your requests instead of queuing them" },
