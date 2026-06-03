@@ -42,6 +42,7 @@ type Mode = "Auto" | "Plan" | "Build" | "Ask";
 type RightTab = "git" | "browser" | "preview" | "terminal" | null;
 type ChatMessage = { id: string; role: "user" | "assistant"; text: string; slash?: string; status?: string };
 type SideView = "agent" | "automations" | "customize";
+type Agent = { id: string; name: string; description: string; instructions: string; model: string; tools: string[] };
 
 const FOOTER_HINTS = [
   { cmd: "/multitask", text: "to run subagents to parallelize your requests instead of queuing them" },
@@ -70,7 +71,8 @@ function Density() {
   const [folderOpen, setFolderOpen] = useState(false);
   const [localOpen, setLocalOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [appMenu, setAppMenu] = useState<null | "File" | "Edit" | "View" | "Help">(null);
+  const [createAgentOpen, setCreateAgentOpen] = useState(false);
+  const [agents, setAgents] = useState<Agent[]>([]);
 
   const [mode, setMode] = useState<Mode>("Auto");
   const [text, setText] = useState("");
@@ -114,7 +116,7 @@ function Density() {
         setFolderOpen(false);
         setLocalOpen(false);
         setMoreOpen(false);
-        setAppMenu(null);
+        setCreateAgentOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -186,10 +188,7 @@ function Density() {
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground select-none">
       {/* Title bar (Mac-like) */}
       <TitleBar
-        appMenu={appMenu}
-        setAppMenu={setAppMenu}
         sidebarBadge={openTabs.length > 0 || hasConversation ? 1 : 0}
-        onNew={newChat}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -205,6 +204,8 @@ function Density() {
               setView={setSideView}
               onClose={() => setSidebarOpen(false)}
               onNew={newChat}
+              onCreateAgent={() => setCreateAgentOpen(true)}
+              agents={agents}
             />
           )}
         </aside>
@@ -321,8 +322,14 @@ function Density() {
         </main>
       </div>
 
-      {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
+      {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} onCreateAgent={() => { setPaletteOpen(false); setCreateAgentOpen(true); }} />}
       {showHidePanelTip && <HidePanelTip />}
+      {createAgentOpen && (
+        <CreateAgentModal
+          onClose={() => setCreateAgentOpen(false)}
+          onCreate={(a: Agent) => { setAgents((prev) => [...prev, a]); setCreateAgentOpen(false); }}
+        />
+      )}
     </div>
   );
 }
@@ -330,47 +337,14 @@ function Density() {
 /* ───────────────────────── Title Bar ───────────────────────── */
 
 function TitleBar({
-  appMenu, setAppMenu, sidebarBadge, onNew,
+  sidebarBadge,
 }: {
-  appMenu: null | "File" | "Edit" | "View" | "Help";
-  setAppMenu: (m: null | "File" | "Edit" | "View" | "Help") => void;
   sidebarBadge: number;
-  onNew: () => void;
 }) {
-  const menus: Array<"File" | "Edit" | "View" | "Help"> = ["File", "Edit", "View", "Help"];
-  const items: Record<string, Array<{ label: string; kbd?: string; onClick?: () => void; sep?: boolean }>> = {
-    File: [
-      { label: "New Agent", kbd: "Ctrl N", onClick: onNew },
-      { label: "New Window", kbd: "Ctrl Shift N" },
-      { label: "Open Folder…", kbd: "Ctrl O" },
-      { sep: true, label: "" },
-      { label: "Save", kbd: "Ctrl S" },
-      { sep: true, label: "" },
-      { label: "Quit", kbd: "Ctrl Q" },
-    ],
-    Edit: [
-      { label: "Undo", kbd: "Ctrl Z" },
-      { label: "Redo", kbd: "Ctrl Y" },
-      { sep: true, label: "" },
-      { label: "Cut", kbd: "Ctrl X" },
-      { label: "Copy", kbd: "Ctrl C" },
-      { label: "Paste", kbd: "Ctrl V" },
-    ],
-    View: [
-      { label: "Toggle Sidebar", kbd: "Ctrl B" },
-      { label: "Toggle Right Panel", kbd: "Ctrl Alt B" },
-      { label: "Command Palette", kbd: "Ctrl K" },
-    ],
-    Help: [
-      { label: "Documentation" },
-      { label: "Keyboard Shortcuts" },
-      { label: "About Density" },
-    ],
-  };
   return (
     <div className="relative z-30 flex h-9 shrink-0 items-center justify-between border-b border-border/60 bg-surface/95 backdrop-blur">
-      {/* Left: app icon + menu */}
-      <div className="flex h-full items-center gap-1 pl-3">
+      {/* Left: app icon */}
+      <div className="flex h-full items-center gap-2 pl-3">
         <div className="relative flex size-5 items-center justify-center">
           <DensitySquareIcon />
           {sidebarBadge > 0 && (
@@ -379,39 +353,7 @@ function TitleBar({
             </span>
           )}
         </div>
-        <div className="ml-2 flex items-center" onMouseLeave={() => setAppMenu(null)}>
-          {menus.map((m) => (
-            <div key={m} className="relative">
-              <button
-                onClick={() => setAppMenu(appMenu === m ? null : m)}
-                onMouseEnter={() => appMenu && setAppMenu(m)}
-                className={`flex h-7 items-center rounded px-2 text-[12.5px] text-foreground/85 transition hover:bg-accent ${
-                  appMenu === m ? "bg-accent" : ""
-                }`}
-              >
-                {m}
-              </button>
-              {appMenu === m && (
-                <div className="absolute left-0 top-full z-40 mt-0.5 w-[220px] rounded-lg border border-border bg-popover p-1 shadow-pop animate-scale-in">
-                  {items[m].map((it, i) =>
-                    it.sep ? (
-                      <div key={i} className="my-1 h-px bg-border" />
-                    ) : (
-                      <button
-                        key={i}
-                        onClick={() => { it.onClick?.(); setAppMenu(null); }}
-                        className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-[12.5px] text-foreground/85 transition hover:bg-accent"
-                      >
-                        <span>{it.label}</span>
-                        {it.kbd && <span className="text-[10.5px] text-muted-foreground">{it.kbd}</span>}
-                      </button>
-                    ),
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <span className="text-[12.5px] font-medium tracking-tight text-foreground/85">Density</span>
       </div>
 
       {/* Center drag region */}
@@ -580,8 +522,8 @@ function IconBtn({
 /* ───────────────────────── Sidebar ───────────────────────── */
 
 function SidebarPanel({
-  view, setView, onClose, onNew,
-}: { view: SideView; setView: (v: SideView) => void; onClose: () => void; onNew: () => void }) {
+  view, setView, onClose, onNew, onCreateAgent, agents,
+}: { view: SideView; setView: (v: SideView) => void; onClose: () => void; onNew: () => void; onCreateAgent: () => void; agents: Agent[] }) {
   const workspaces = [
     { label: "New folder (2)", icon: <FolderIcon size={14} />, active: true },
     { label: "Navigation to ceres folder", dot: "muted" as const },
@@ -607,8 +549,23 @@ function SidebarPanel({
 
       <div className="flex-1 overflow-y-auto px-2 pb-2 text-[13px]">
         <NavRow icon={<FunnelIcon />} label="New Agent" shortcut="Ctrl+N" active={view === "agent"} onClick={() => { setView("agent"); onNew(); }} />
+        <NavRow icon={<PlusIcon size={14} />} label="Create Agent" onClick={onCreateAgent} />
         <NavRow icon={<AutomationsIcon />} label="Automations" active={view === "automations"} onClick={() => setView("automations")} />
         <NavRow icon={<CustomizeIcon />} label="Customize" active={view === "customize"} onClick={() => setView("customize")} />
+
+        {agents.length > 0 && (
+          <>
+            <div className="mt-4 px-2 pb-1 text-[11.5px] uppercase tracking-wider text-muted-foreground/80">My Agents</div>
+            {agents.map((a) => (
+              <button key={a.id} className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[12.5px] text-foreground/85 hover:bg-accent">
+                <span className="flex size-5 items-center justify-center rounded bg-secondary text-[10px] font-medium text-foreground/80">
+                  {a.name.slice(0, 1).toUpperCase()}
+                </span>
+                <span className="flex-1 truncate">{a.name}</span>
+              </button>
+            ))}
+          </>
+        )}
 
         <div className="mt-4 flex items-center justify-between px-2 pb-1 text-[11.5px] uppercase tracking-wider text-muted-foreground/80">
           <span>Workspaces</span>
@@ -725,9 +682,11 @@ const SettingsIcon = () => (
 
 function UserBubble({ text, slash }: { text: string; slash?: string }) {
   return (
-    <div className="animate-fade-in rounded-2xl border border-border bg-card px-5 py-3.5 text-[14px] leading-relaxed text-foreground shadow-soft">
-      {slash && <span className="mr-1.5 font-mono text-[13px] text-[oklch(0.65_0.15_55)]">{slash}</span>}
-      <span>{text}</span>
+    <div className="flex justify-end animate-fade-in">
+      <div className="inline-flex max-w-[80%] items-center rounded-full border border-border bg-card px-4 py-2 text-[13.5px] leading-relaxed text-foreground/90 shadow-soft">
+        {slash && <span className="mr-1.5 font-mono text-[12.5px] text-[oklch(0.65_0.15_55)]">{slash}</span>}
+        <span className="truncate">{text}</span>
+      </div>
     </div>
   );
 }
@@ -1253,9 +1212,10 @@ function AutomationsView() {
 
 /* ───────────────────────── Command Palette ───────────────────────── */
 
-function CommandPalette({ onClose }: { onClose: () => void }) {
+function CommandPalette({ onClose, onCreateAgent }: { onClose: () => void; onCreateAgent?: () => void }) {
   const [q, setQ] = useState("");
-  const agents = [
+  const agents: Array<{ icon: React.ReactNode; label: string; kbd?: string; onClick?: () => void }> = [
+    { icon: <PlusIcon size={14} />, label: "Create Agent", onClick: onCreateAgent, kbd: "Ctrl Shift A" },
     { icon: <FunnelIcon />, label: "New Agent" },
     { icon: <MicIcon size={14} />, label: "Use Voice" },
     { icon: <MicIcon size={14} />, label: "Dictate", kbd: "Ctrl Shift ." },
@@ -1297,7 +1257,7 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
         <div className="max-h-[60vh] overflow-y-auto p-1.5">
           {filtered.agents.length > 0 && (
             <Section title="Agent">
-              {filtered.agents.map((a, i) => <PaletteRow key={i} {...a} highlighted={hl === i} />)}
+              {filtered.agents.map((a, i) => <PaletteRow key={i} {...a} highlighted={hl === i} onClick={a.onClick} />)}
             </Section>
           )}
           {filtered.agents.length > 0 && filtered.modes.length > 0 && <div className="my-1 h-px bg-border" />}
@@ -1323,9 +1283,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </div>
   );
 }
-function PaletteRow({ icon, label, kbd, highlighted }: { icon: React.ReactNode; label: string; kbd?: string; highlighted?: boolean }) {
+function PaletteRow({ icon, label, kbd, highlighted, onClick }: { icon: React.ReactNode; label: string; kbd?: string; highlighted?: boolean; onClick?: () => void }) {
   return (
-    <button className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-[13px] transition ${
+    <button onClick={onClick} className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-[13px] transition ${
       highlighted ? "bg-accent text-foreground" : "text-foreground/85 hover:bg-accent"
     }`}>
       <span className="text-foreground/70">{icon}</span>
@@ -1360,5 +1320,218 @@ function XIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" />
     </svg>
+  );
+}
+
+/* ───────────────────────── Create Agent Modal ───────────────────────── */
+
+function CreateAgentModal({ onClose, onCreate }: { onClose: () => void; onCreate: (a: Agent) => void }) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [model, setModel] = useState("Auto");
+  const [tools, setTools] = useState<string[]>(["Files", "Terminal"]);
+  const [rules, setRules] = useState<string[]>([""]);
+  const [modelOpen, setModelOpen] = useState(false);
+  const allTools = ["Files", "Terminal", "Browser", "Git", "Search", "Image", "Multitask"];
+  const models = ["Auto", "Claude Sonnet 4.5", "GPT-5.2", "Gemini 2.5 Pro", "Local"];
+
+  const canCreate = name.trim().length > 0;
+  const submit = () => {
+    if (!canCreate) return;
+    const fullInstructions = [
+      instructions.trim(),
+      ...rules.map((r) => r.trim()).filter(Boolean).map((r, i) => `${i + 1}. ${r}`),
+    ].filter(Boolean).join("\n\n");
+    onCreate({
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      description: description.trim(),
+      instructions: fullInstructions,
+      model,
+      tools,
+    });
+  };
+
+  const toggleTool = (t: string) =>
+    setTools((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/10 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-[min(620px,92vw)] max-h-[88vh] overflow-hidden rounded-2xl border border-border bg-popover shadow-pop animate-scale-in flex flex-col"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-[oklch(0.6_0.18_250)] to-[oklch(0.7_0.16_200)] text-white">
+              <SparkleIcon size={14} />
+            </div>
+            <div>
+              <div className="text-[14px] font-semibold tracking-tight text-foreground">Create Agent</div>
+              <div className="text-[11.5px] text-muted-foreground">Define name, intent, rules, and tools</div>
+            </div>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="flex size-7 items-center justify-center rounded-md text-foreground/60 transition hover:bg-accent hover:text-foreground">
+            <svg width="12" height="12" viewBox="0 0 10 10"><line x1="1.5" y1="1.5" x2="8.5" y2="8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /><line x1="8.5" y1="1.5" x2="1.5" y2="8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          <Field label="Name" hint="Shown in the sidebar and palette">
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Refactor Specialist"
+              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-[13px] placeholder:text-hint focus:outline-none focus:border-border-strong focus:shadow-soft transition"
+            />
+          </Field>
+
+          <Field label="Description" hint="One line summary of what this agent does">
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Helps clean up code, remove dead paths, and tighten types."
+              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-[13px] placeholder:text-hint focus:outline-none focus:border-border-strong focus:shadow-soft transition"
+            />
+          </Field>
+
+          <Field label="System instructions" hint="The agent's voice, persona, and overall objective">
+            <textarea
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              rows={4}
+              placeholder="You are a senior engineer that explains every change in one sentence before writing code…"
+              className="w-full resize-none rounded-lg border border-border bg-card px-3 py-2 text-[13px] leading-relaxed placeholder:text-hint focus:outline-none focus:border-border-strong focus:shadow-soft transition"
+            />
+          </Field>
+
+          <Field label="Rules" hint="Concrete constraints the agent must always follow">
+            <div className="space-y-2">
+              {rules.map((r, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-secondary text-[11px] font-mono text-foreground/70">{i + 1}</span>
+                  <input
+                    value={r}
+                    onChange={(e) => setRules((prev) => prev.map((x, idx) => (idx === i ? e.target.value : x)))}
+                    placeholder="Never edit files without explaining the diff first"
+                    className="flex-1 rounded-md border border-border bg-card px-2.5 py-1.5 text-[12.5px] placeholder:text-hint focus:outline-none focus:border-border-strong transition"
+                  />
+                  {rules.length > 1 && (
+                    <button
+                      onClick={() => setRules((prev) => prev.filter((_, idx) => idx !== i))}
+                      className="flex size-6 items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-foreground"
+                      aria-label="Remove rule"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                onClick={() => setRules((prev) => [...prev, ""])}
+                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] text-foreground/70 hover:bg-accent"
+              >
+                <PlusIcon size={12} /><span>Add rule</span>
+              </button>
+            </div>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Model" hint="The reasoning model to use">
+              <div className="relative">
+                <button
+                  onClick={() => setModelOpen((v) => !v)}
+                  className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-[13px] text-foreground hover:bg-accent transition"
+                >
+                  <span className="flex items-center gap-2"><StackIcon size={13} />{model}</span>
+                  <ChevronDownIcon size={12} />
+                </button>
+                {modelOpen && (
+                  <div className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-popover p-1 shadow-pop animate-scale-in">
+                    {models.map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => { setModel(m); setModelOpen(false); }}
+                        className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-[12.5px] transition ${
+                          model === m ? "bg-accent text-foreground" : "text-foreground/85 hover:bg-accent"
+                        }`}
+                      >
+                        {m}
+                        {model === m && <CheckIcon />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Field>
+
+            <Field label="Tools" hint="Capabilities granted to this agent">
+              <div className="flex flex-wrap gap-1.5">
+                {allTools.map((t) => {
+                  const on = tools.includes(t);
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => toggleTool(t)}
+                      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px] transition ${
+                        on
+                          ? "border-foreground/80 bg-foreground text-background"
+                          : "border-border bg-card text-foreground/75 hover:bg-accent"
+                      }`}
+                    >
+                      {on && <CheckIcon />}
+                      <span>{t}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-border px-5 py-3">
+          <div className="text-[11.5px] text-muted-foreground">
+            <Kbd>Esc</Kbd> <span className="mx-1">to cancel</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="rounded-md px-3 py-1.5 text-[12.5px] text-foreground/75 hover:bg-accent transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={submit}
+              disabled={!canCreate}
+              className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-[12.5px] font-medium transition active:scale-[0.98] ${
+                canCreate
+                  ? "bg-foreground text-background shadow-soft hover:opacity-90"
+                  : "bg-secondary text-muted-foreground cursor-not-allowed"
+              }`}
+            >
+              <SparkleIcon size={12} />
+              <span>Create Agent</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1.5 flex items-baseline justify-between">
+        <label className="text-[12px] font-medium text-foreground/85">{label}</label>
+        {hint && <span className="text-[10.5px] text-muted-foreground">{hint}</span>}
+      </div>
+      {children}
+    </div>
   );
 }
