@@ -41,7 +41,7 @@ export const Route = createFileRoute("/")({
 type Mode = "Auto" | "Plan" | "Build" | "Ask";
 type RightTab = "git" | "browser" | "preview" | "terminal" | null;
 type ChatMessage = { id: string; role: "user" | "assistant"; text: string; slash?: string; status?: string };
-type SideView = "agent" | "automations" | "customize";
+type SideView = "agent" | "automations" | "customize" | "create-agent";
 
 const FOOTER_HINTS = [
   { cmd: "/multitask", text: "to run subagents to parallelize your requests instead of queuing them" },
@@ -233,6 +233,8 @@ function Density() {
             <section className="relative flex min-w-0 flex-1 flex-col">
               {sideView === "automations" && sidebarOpen ? (
                 <AutomationsView />
+              ) : sideView === "create-agent" && sidebarOpen ? (
+                <CreateAgentView onCancel={() => setSideView("agent")} />
               ) : hasConversation ? (
                 <>
                   <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-6">
