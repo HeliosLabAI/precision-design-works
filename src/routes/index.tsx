@@ -330,43 +330,10 @@ function Density() {
 /* ───────────────────────── Title Bar ───────────────────────── */
 
 function TitleBar({
-  appMenu, setAppMenu, sidebarBadge, onNew,
+  sidebarBadge,
 }: {
-  appMenu: null | "File" | "Edit" | "View" | "Help";
-  setAppMenu: (m: null | "File" | "Edit" | "View" | "Help") => void;
   sidebarBadge: number;
-  onNew: () => void;
 }) {
-  const menus: Array<"File" | "Edit" | "View" | "Help"> = ["File", "Edit", "View", "Help"];
-  const items: Record<string, Array<{ label: string; kbd?: string; onClick?: () => void; sep?: boolean }>> = {
-    File: [
-      { label: "New Agent", kbd: "Ctrl N", onClick: onNew },
-      { label: "New Window", kbd: "Ctrl Shift N" },
-      { label: "Open Folder…", kbd: "Ctrl O" },
-      { sep: true, label: "" },
-      { label: "Save", kbd: "Ctrl S" },
-      { sep: true, label: "" },
-      { label: "Quit", kbd: "Ctrl Q" },
-    ],
-    Edit: [
-      { label: "Undo", kbd: "Ctrl Z" },
-      { label: "Redo", kbd: "Ctrl Y" },
-      { sep: true, label: "" },
-      { label: "Cut", kbd: "Ctrl X" },
-      { label: "Copy", kbd: "Ctrl C" },
-      { label: "Paste", kbd: "Ctrl V" },
-    ],
-    View: [
-      { label: "Toggle Sidebar", kbd: "Ctrl B" },
-      { label: "Toggle Right Panel", kbd: "Ctrl Alt B" },
-      { label: "Command Palette", kbd: "Ctrl K" },
-    ],
-    Help: [
-      { label: "Documentation" },
-      { label: "Keyboard Shortcuts" },
-      { label: "About Density" },
-    ],
-  };
   return (
     <div className="relative z-30 flex h-9 shrink-0 items-center justify-between border-b border-border/60 bg-surface/95 backdrop-blur">
       {/* Left: app icon */}
