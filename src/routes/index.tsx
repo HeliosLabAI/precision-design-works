@@ -325,7 +325,7 @@ function Density() {
       {createAgentOpen && (
         <CreateAgentModal
           onClose={() => setCreateAgentOpen(false)}
-          onCreate={(a) => { setAgents((prev) => [...prev, a]); setCreateAgentOpen(false); }}
+          onCreate={(a: Agent) => { setAgents((prev) => [...prev, a]); setCreateAgentOpen(false); }}
         />
       )}
     </div>
