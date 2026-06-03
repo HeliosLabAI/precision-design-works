@@ -1322,3 +1322,216 @@ function XIcon() {
     </svg>
   );
 }
+
+/* ───────────────────────── Create Agent Modal ───────────────────────── */
+
+function CreateAgentModal({ onClose, onCreate }: { onClose: () => void; onCreate: (a: Agent) => void }) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [model, setModel] = useState("Auto");
+  const [tools, setTools] = useState<string[]>(["Files", "Terminal"]);
+  const [rules, setRules] = useState<string[]>([""]);
+  const [modelOpen, setModelOpen] = useState(false);
+  const allTools = ["Files", "Terminal", "Browser", "Git", "Search", "Image", "Multitask"];
+  const models = ["Auto", "Claude Sonnet 4.5", "GPT-5.2", "Gemini 2.5 Pro", "Local"];
+
+  const canCreate = name.trim().length > 0;
+  const submit = () => {
+    if (!canCreate) return;
+    const fullInstructions = [
+      instructions.trim(),
+      ...rules.map((r) => r.trim()).filter(Boolean).map((r, i) => `${i + 1}. ${r}`),
+    ].filter(Boolean).join("\n\n");
+    onCreate({
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      description: description.trim(),
+      instructions: fullInstructions,
+      model,
+      tools,
+    });
+  };
+
+  const toggleTool = (t: string) =>
+    setTools((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/10 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-[min(620px,92vw)] max-h-[88vh] overflow-hidden rounded-2xl border border-border bg-popover shadow-pop animate-scale-in flex flex-col"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-[oklch(0.6_0.18_250)] to-[oklch(0.7_0.16_200)] text-white">
+              <SparkleIcon size={14} />
+            </div>
+            <div>
+              <div className="text-[14px] font-semibold tracking-tight text-foreground">Create Agent</div>
+              <div className="text-[11.5px] text-muted-foreground">Define name, intent, rules, and tools</div>
+            </div>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="flex size-7 items-center justify-center rounded-md text-foreground/60 transition hover:bg-accent hover:text-foreground">
+            <svg width="12" height="12" viewBox="0 0 10 10"><line x1="1.5" y1="1.5" x2="8.5" y2="8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /><line x1="8.5" y1="1.5" x2="1.5" y2="8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          <Field label="Name" hint="Shown in the sidebar and palette">
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Refactor Specialist"
+              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-[13px] placeholder:text-hint focus:outline-none focus:border-border-strong focus:shadow-soft transition"
+            />
+          </Field>
+
+          <Field label="Description" hint="One line summary of what this agent does">
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Helps clean up code, remove dead paths, and tighten types."
+              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-[13px] placeholder:text-hint focus:outline-none focus:border-border-strong focus:shadow-soft transition"
+            />
+          </Field>
+
+          <Field label="System instructions" hint="The agent's voice, persona, and overall objective">
+            <textarea
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              rows={4}
+              placeholder="You are a senior engineer that explains every change in one sentence before writing code…"
+              className="w-full resize-none rounded-lg border border-border bg-card px-3 py-2 text-[13px] leading-relaxed placeholder:text-hint focus:outline-none focus:border-border-strong focus:shadow-soft transition"
+            />
+          </Field>
+
+          <Field label="Rules" hint="Concrete constraints the agent must always follow">
+            <div className="space-y-2">
+              {rules.map((r, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-secondary text-[11px] font-mono text-foreground/70">{i + 1}</span>
+                  <input
+                    value={r}
+                    onChange={(e) => setRules((prev) => prev.map((x, idx) => (idx === i ? e.target.value : x)))}
+                    placeholder="Never edit files without explaining the diff first"
+                    className="flex-1 rounded-md border border-border bg-card px-2.5 py-1.5 text-[12.5px] placeholder:text-hint focus:outline-none focus:border-border-strong transition"
+                  />
+                  {rules.length > 1 && (
+                    <button
+                      onClick={() => setRules((prev) => prev.filter((_, idx) => idx !== i))}
+                      className="flex size-6 items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-foreground"
+                      aria-label="Remove rule"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                onClick={() => setRules((prev) => [...prev, ""])}
+                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] text-foreground/70 hover:bg-accent"
+              >
+                <PlusIcon size={12} /><span>Add rule</span>
+              </button>
+            </div>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Model" hint="The reasoning model to use">
+              <div className="relative">
+                <button
+                  onClick={() => setModelOpen((v) => !v)}
+                  className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-[13px] text-foreground hover:bg-accent transition"
+                >
+                  <span className="flex items-center gap-2"><StackIcon size={13} />{model}</span>
+                  <ChevronDownIcon size={12} />
+                </button>
+                {modelOpen && (
+                  <div className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-popover p-1 shadow-pop animate-scale-in">
+                    {models.map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => { setModel(m); setModelOpen(false); }}
+                        className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-[12.5px] transition ${
+                          model === m ? "bg-accent text-foreground" : "text-foreground/85 hover:bg-accent"
+                        }`}
+                      >
+                        {m}
+                        {model === m && <CheckIcon />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Field>
+
+            <Field label="Tools" hint="Capabilities granted to this agent">
+              <div className="flex flex-wrap gap-1.5">
+                {allTools.map((t) => {
+                  const on = tools.includes(t);
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => toggleTool(t)}
+                      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px] transition ${
+                        on
+                          ? "border-foreground/80 bg-foreground text-background"
+                          : "border-border bg-card text-foreground/75 hover:bg-accent"
+                      }`}
+                    >
+                      {on && <CheckIcon />}
+                      <span>{t}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-border px-5 py-3">
+          <div className="text-[11.5px] text-muted-foreground">
+            <Kbd>Esc</Kbd> <span className="mx-1">to cancel</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="rounded-md px-3 py-1.5 text-[12.5px] text-foreground/75 hover:bg-accent transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={submit}
+              disabled={!canCreate}
+              className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-[12.5px] font-medium transition active:scale-[0.98] ${
+                canCreate
+                  ? "bg-foreground text-background shadow-soft hover:opacity-90"
+                  : "bg-secondary text-muted-foreground cursor-not-allowed"
+              }`}
+            >
+              <SparkleIcon size={12} />
+              <span>Create Agent</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1.5 flex items-baseline justify-between">
+        <label className="text-[12px] font-medium text-foreground/85">{label}</label>
+        {hint && <span className="text-[10.5px] text-muted-foreground">{hint}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
