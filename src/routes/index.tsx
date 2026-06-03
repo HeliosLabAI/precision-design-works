@@ -186,10 +186,7 @@ function Density() {
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground select-none">
       {/* Title bar (Mac-like) */}
       <TitleBar
-        appMenu={appMenu}
-        setAppMenu={setAppMenu}
         sidebarBadge={openTabs.length > 0 || hasConversation ? 1 : 0}
-        onNew={newChat}
       />
 
       <div className="flex min-h-0 flex-1">
