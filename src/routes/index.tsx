@@ -406,7 +406,7 @@ function Toolbar({
   sidebarBadge: number;
 }) {
   return (
-    <div className="relative flex h-11 shrink-0 items-center justify-between border-b border-border/60 px-2">
+    <div className="relative flex h-11 shrink-0 items-center justify-between px-2">
       <div className="flex items-center gap-0.5">
         <IconBtn label="Toggle sidebar" onClick={onToggleSidebar} active={sidebarOpen} badge={!sidebarOpen ? sidebarBadge : 0}>
           <SidebarIcon size={15} />
@@ -678,8 +678,8 @@ const SettingsIcon = () => (
 
 function UserBubble({ text, slash }: { text: string; slash?: string }) {
   return (
-    <div className="flex justify-end animate-fade-in">
-      <div className="inline-flex max-w-[80%] items-center rounded-full border border-border bg-card px-4 py-2 text-[13.5px] leading-relaxed text-foreground/90 shadow-soft">
+    <div className="flex justify-end animate-slide-in-right">
+      <div className="inline-flex max-w-[80%] items-center rounded-full border border-border bg-card px-4 py-2 text-[13.5px] leading-relaxed text-foreground/90 shadow-soft transition-shadow hover:shadow-pop">
         {slash && <span className="mr-1.5 font-mono text-[12.5px] text-[oklch(0.65_0.15_55)]">{slash}</span>}
         <span className="truncate">{text}</span>
       </div>
@@ -688,9 +688,9 @@ function UserBubble({ text, slash }: { text: string; slash?: string }) {
 }
 function AssistantBubble({ text, status }: { text: string; status?: string }) {
   return (
-    <div className="animate-fade-in px-2 py-1 text-[14px] leading-relaxed text-foreground/85">
+    <div className="animate-slide-up px-2 py-1 text-[14px] leading-relaxed text-foreground/85">
       {text}
-      {status && <div className="mt-2 text-[12.5px] text-muted-foreground"><span className="font-medium text-foreground/80">{status.split(" ")[0]}</span> {status.split(" ").slice(1).join(" ")}</div>}
+      {status && <div className="mt-2 text-[12.5px] text-muted-foreground animate-fade-in"><span className="font-medium text-foreground/80">{status.split(" ")[0]}</span> {status.split(" ").slice(1).join(" ")}</div>}
     </div>
   );
 }
@@ -698,18 +698,19 @@ function ThinkingIndicator() {
   return (
     <div className="flex items-center gap-2 px-2 py-1 text-[12.5px] text-muted-foreground animate-fade-in">
       <span className="inline-flex gap-1">
-        <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-pulse" />
-        <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-pulse [animation-delay:120ms]" />
-        <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-pulse [animation-delay:240ms]" />
+        <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-pulse-dot" />
+        <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-pulse-dot [animation-delay:160ms]" />
+        <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-pulse-dot [animation-delay:320ms]" />
       </span>
-      <span><span className="font-medium text-foreground/80">Planning</span> next moves</span>
+      <span className="shimmer-text font-medium">Planning next moves</span>
     </div>
   );
 }
 
+
 function StatusFooter() {
   return (
-    <div className="flex h-7 shrink-0 items-center justify-between border-t border-border/60 px-3 text-[11.5px] text-muted-foreground">
+    <div className="flex h-7 shrink-0 items-center justify-between px-3 text-[11.5px] text-muted-foreground">
       <div className="flex items-center gap-1.5"><HardDriveIcon size={11} /><span>Local</span></div>
       <div className="flex items-center gap-1.5"><ContextRing /><span>8%</span></div>
     </div>
