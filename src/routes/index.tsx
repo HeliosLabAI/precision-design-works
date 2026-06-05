@@ -696,16 +696,46 @@ function AssistantBubble({ text, status }: { text: string; status?: string }) {
 }
 function ThinkingIndicator() {
   return (
-    <div className="flex items-center gap-2 px-2 py-1 text-[12.5px] text-muted-foreground animate-fade-in">
-      <span className="inline-flex gap-1">
-        <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-pulse-dot" />
-        <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-pulse-dot [animation-delay:160ms]" />
-        <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-pulse-dot [animation-delay:320ms]" />
-      </span>
-      <span className="shimmer-text font-medium">Planning next moves</span>
+    <div className="flex items-center gap-3 px-2 py-2 text-[12.5px] text-muted-foreground animate-fade-in">
+      <OrbitDots />
+      <span className="shimmer-text font-medium">Thinking</span>
     </div>
   );
 }
+
+function OrbitDots() {
+  // 3x3 grid of dots — outer 8 orbit, center pulses
+  const dots = [
+    { x: 0, y: 0, d: 0 },
+    { x: 1, y: 0, d: 80 },
+    { x: 2, y: 0, d: 160 },
+    { x: 2, y: 1, d: 240 },
+    { x: 2, y: 2, d: 320 },
+    { x: 1, y: 2, d: 400 },
+    { x: 0, y: 2, d: 480 },
+    { x: 0, y: 1, d: 560 },
+  ];
+  return (
+    <span className="relative inline-block size-5">
+      {dots.map((p, i) => (
+        <span
+          key={i}
+          className="absolute size-[3px] rounded-full bg-foreground/85"
+          style={{
+            left: `${p.x * 7}px`,
+            top: `${p.y * 7}px`,
+            animation: `orbit-dot 1.2s ease-in-out ${p.d}ms infinite`,
+          }}
+        />
+      ))}
+      <span
+        className="absolute size-[3px] rounded-full bg-foreground"
+        style={{ left: "7px", top: "7px", animation: "pulse-dot 1.2s ease-in-out infinite" }}
+      />
+    </span>
+  );
+}
+
 
 
 function StatusFooter() {
