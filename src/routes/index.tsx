@@ -693,35 +693,54 @@ function UserBubble({ text, slash }: { text: string; slash?: string }) {
     </div>
   );
 }
-function AssistantBubble({ text, status }: { text: string; status?: string }) {
+function AssistantBubble({ text, status, speed = "normal" }: { text: string; status?: string; speed?: "normal" | "fast" }) {
+  const [shown, setShown] = useState("");
+  useEffect(() => {
+    const cps = speed === "fast" ? 120 : 45; // chars per second
+    const stepMs = Math.max(8, Math.round(1000 / cps));
+    setShown("");
+    let i = 0;
+    const id = setInterval(() => {
+      i += 1;
+      setShown(text.slice(0, i));
+      if (i >= text.length) clearInterval(id);
+    }, stepMs);
+    return () => clearInterval(id);
+  }, [text, speed]);
+  const done = shown.length >= text.length;
   return (
     <div className="animate-slide-up px-2 py-1 text-[14px] leading-relaxed text-foreground/85">
-      {text}
-      {status && <div className="mt-2 text-[12.5px] text-muted-foreground animate-fade-in"><span className="font-medium text-foreground/80">{status.split(" ")[0]}</span> {status.split(" ").slice(1).join(" ")}</div>}
+      {shown}
+      {!done && <span className="caret ml-0.5" />}
+      {done && status && (
+        <div className="mt-2 text-[12.5px] text-muted-foreground animate-fade-in">
+          <span className="font-medium text-foreground/80">{status.split(" ")[0]}</span> {status.split(" ").slice(1).join(" ")}
+        </div>
+      )}
     </div>
   );
 }
-function ThinkingIndicator() {
+function ThinkingIndicator({ speed = "normal" }: { speed?: "normal" | "fast" }) {
+  const duration = speed === "fast" ? "0.7s" : "1.2s";
   return (
-    <div className="flex items-center gap-3 px-2 py-2 text-[12.5px] text-muted-foreground animate-fade-in">
-      <OrbitDots />
+    <div
+      className="flex items-center gap-3 px-2 py-2 text-[12.5px] text-muted-foreground animate-fade-in"
+      style={{ ["--shimmer-duration" as string]: duration }}
+    >
+      <OrbitDots duration={duration} />
       <span className="shimmer-text font-medium">Thinking</span>
     </div>
   );
 }
 
-function OrbitDots() {
-  // 3x3 grid of dots — outer 8 orbit, center pulses
+function OrbitDots({ duration = "1.2s" }: { duration?: string }) {
+  // 3x3 grid — outer 8 chase around in sequence, center pulses on its own.
   const dots = [
-    { x: 0, y: 0, d: 0 },
-    { x: 1, y: 0, d: 80 },
-    { x: 2, y: 0, d: 160 },
-    { x: 2, y: 1, d: 240 },
-    { x: 2, y: 2, d: 320 },
-    { x: 1, y: 2, d: 400 },
-    { x: 0, y: 2, d: 480 },
-    { x: 0, y: 1, d: 560 },
+    { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 },
+    { x: 2, y: 1 }, { x: 2, y: 2 }, { x: 1, y: 2 },
+    { x: 0, y: 2 }, { x: 0, y: 1 },
   ];
+  const durMs = parseFloat(duration) * 1000;
   return (
     <span className="relative inline-block size-5">
       {dots.map((p, i) => (
@@ -731,17 +750,18 @@ function OrbitDots() {
           style={{
             left: `${p.x * 7}px`,
             top: `${p.y * 7}px`,
-            animation: `orbit-dot 1.2s ease-in-out ${p.d}ms infinite`,
+            animation: `orbit-dot ${duration} ease-in-out ${Math.round((i / dots.length) * durMs)}ms infinite`,
           }}
         />
       ))}
       <span
         className="absolute size-[3px] rounded-full bg-foreground"
-        style={{ left: "7px", top: "7px", animation: "pulse-dot 1.2s ease-in-out infinite" }}
+        style={{ left: "7px", top: "7px", animation: `pulse-dot ${duration} ease-in-out infinite` }}
       />
     </span>
   );
 }
+
 
 
 
