@@ -765,14 +765,32 @@ function OrbitDots({ duration = "1.2s" }: { duration?: string }) {
 
 
 
-function StatusFooter() {
+function StatusFooter({ speed, onSpeedChange }: { speed: "normal" | "fast"; onSpeedChange: (s: "normal" | "fast") => void }) {
   return (
     <div className="flex h-7 shrink-0 items-center justify-between px-3 text-[11.5px] text-muted-foreground">
       <div className="flex items-center gap-1.5"><HardDriveIcon size={11} /><span>Local</span></div>
-      <div className="flex items-center gap-1.5"><ContextRing /><span>8%</span></div>
+      <div className="flex items-center gap-3">
+        <div className="inline-flex items-center gap-0.5 rounded-full border border-border bg-card p-0.5 text-[10.5px]">
+          {(["normal", "fast"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => onSpeedChange(s)}
+              className={`rounded-full px-2 py-0.5 transition ${
+                speed === s ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+              }`}
+              aria-pressed={speed === s}
+              title={`Typing speed: ${s}`}
+            >
+              {s === "normal" ? "Normal" : "Fast"}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5"><ContextRing /><span>8%</span></div>
+      </div>
     </div>
   );
 }
+
 function ContextRing() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
