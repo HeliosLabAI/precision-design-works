@@ -81,6 +81,12 @@ function Density() {
   const [thinking, setThinking] = useState(false);
   const [running, setRunning] = useState(false);
   const [showHidePanelTip, setShowHidePanelTip] = useState(false);
+  const [typingSpeed, setTypingSpeed] = useState<"normal" | "fast">(() => {
+    if (typeof window === "undefined") return "normal";
+    return (localStorage.getItem("density:typing-speed") as "normal" | "fast") || "normal";
+  });
+  useEffect(() => { localStorage.setItem("density:typing-speed", typingSpeed); }, [typingSpeed]);
+
 
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
