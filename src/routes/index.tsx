@@ -186,10 +186,6 @@ function Density() {
 
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground select-none">
-      {/* Title bar (Mac-like) */}
-      <TitleBar
-        sidebarBadge={openTabs.length > 0 || hasConversation ? 1 : 0}
-      />
 
       <div className="flex min-h-0 flex-1">
         {/* Sidebar */}
