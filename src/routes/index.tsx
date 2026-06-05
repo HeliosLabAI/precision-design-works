@@ -406,7 +406,7 @@ function Toolbar({
   sidebarBadge: number;
 }) {
   return (
-    <div className="relative flex h-11 shrink-0 items-center justify-between border-b border-border/60 px-2">
+    <div className="relative flex h-11 shrink-0 items-center justify-between px-2">
       <div className="flex items-center gap-0.5">
         <IconBtn label="Toggle sidebar" onClick={onToggleSidebar} active={sidebarOpen} badge={!sidebarOpen ? sidebarBadge : 0}>
           <SidebarIcon size={15} />
