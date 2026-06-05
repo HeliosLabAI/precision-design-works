@@ -244,15 +244,16 @@ function Density() {
                         m.role === "user" ? (
                           <UserBubble key={m.id} text={m.text} slash={m.slash} />
                         ) : (
-                          <AssistantBubble key={m.id} text={m.text} status={m.status} />
+                          <AssistantBubble key={m.id} text={m.text} status={m.status} speed={typingSpeed} />
                         ),
                       )}
-                      {thinking && <ThinkingIndicator />}
+                      {thinking && <ThinkingIndicator speed={typingSpeed} />}
                     </div>
                   </div>
                   <div className="shrink-0 px-6 pb-3">
                     <div className="mx-auto w-full max-w-[760px]">
                       <Composer
+
                         variant="followup"
                         text={text}
                         setText={setText}
