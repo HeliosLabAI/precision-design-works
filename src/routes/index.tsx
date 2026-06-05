@@ -81,6 +81,12 @@ function Density() {
   const [thinking, setThinking] = useState(false);
   const [running, setRunning] = useState(false);
   const [showHidePanelTip, setShowHidePanelTip] = useState(false);
+  const [typingSpeed, setTypingSpeed] = useState<"normal" | "fast">(() => {
+    if (typeof window === "undefined") return "normal";
+    return (localStorage.getItem("density:typing-speed") as "normal" | "fast") || "normal";
+  });
+  useEffect(() => { localStorage.setItem("density:typing-speed", typingSpeed); }, [typingSpeed]);
+
 
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -238,15 +244,16 @@ function Density() {
                         m.role === "user" ? (
                           <UserBubble key={m.id} text={m.text} slash={m.slash} />
                         ) : (
-                          <AssistantBubble key={m.id} text={m.text} status={m.status} />
+                          <AssistantBubble key={m.id} text={m.text} status={m.status} speed={typingSpeed} />
                         ),
                       )}
-                      {thinking && <ThinkingIndicator />}
+                      {thinking && <ThinkingIndicator speed={typingSpeed} />}
                     </div>
                   </div>
                   <div className="shrink-0 px-6 pb-3">
                     <div className="mx-auto w-full max-w-[760px]">
                       <Composer
+
                         variant="followup"
                         text={text}
                         setText={setText}
@@ -262,7 +269,7 @@ function Density() {
                       />
                     </div>
                   </div>
-                  <StatusFooter />
+                  <StatusFooter speed={typingSpeed} onSpeedChange={setTypingSpeed} />
                 </>
               ) : (
                 <>
@@ -686,35 +693,54 @@ function UserBubble({ text, slash }: { text: string; slash?: string }) {
     </div>
   );
 }
-function AssistantBubble({ text, status }: { text: string; status?: string }) {
+function AssistantBubble({ text, status, speed = "normal" }: { text: string; status?: string; speed?: "normal" | "fast" }) {
+  const [shown, setShown] = useState("");
+  useEffect(() => {
+    const cps = speed === "fast" ? 120 : 45; // chars per second
+    const stepMs = Math.max(8, Math.round(1000 / cps));
+    setShown("");
+    let i = 0;
+    const id = setInterval(() => {
+      i += 1;
+      setShown(text.slice(0, i));
+      if (i >= text.length) clearInterval(id);
+    }, stepMs);
+    return () => clearInterval(id);
+  }, [text, speed]);
+  const done = shown.length >= text.length;
   return (
     <div className="animate-slide-up px-2 py-1 text-[14px] leading-relaxed text-foreground/85">
-      {text}
-      {status && <div className="mt-2 text-[12.5px] text-muted-foreground animate-fade-in"><span className="font-medium text-foreground/80">{status.split(" ")[0]}</span> {status.split(" ").slice(1).join(" ")}</div>}
+      {shown}
+      {!done && <span className="caret ml-0.5" />}
+      {done && status && (
+        <div className="mt-2 text-[12.5px] text-muted-foreground animate-fade-in">
+          <span className="font-medium text-foreground/80">{status.split(" ")[0]}</span> {status.split(" ").slice(1).join(" ")}
+        </div>
+      )}
     </div>
   );
 }
-function ThinkingIndicator() {
+function ThinkingIndicator({ speed = "normal" }: { speed?: "normal" | "fast" }) {
+  const duration = speed === "fast" ? "0.7s" : "1.2s";
   return (
-    <div className="flex items-center gap-3 px-2 py-2 text-[12.5px] text-muted-foreground animate-fade-in">
-      <OrbitDots />
+    <div
+      className="flex items-center gap-3 px-2 py-2 text-[12.5px] text-muted-foreground animate-fade-in"
+      style={{ ["--shimmer-duration" as string]: duration }}
+    >
+      <OrbitDots duration={duration} />
       <span className="shimmer-text font-medium">Thinking</span>
     </div>
   );
 }
 
-function OrbitDots() {
-  // 3x3 grid of dots — outer 8 orbit, center pulses
+function OrbitDots({ duration = "1.2s" }: { duration?: string }) {
+  // 3x3 grid — outer 8 chase around in sequence, center pulses on its own.
   const dots = [
-    { x: 0, y: 0, d: 0 },
-    { x: 1, y: 0, d: 80 },
-    { x: 2, y: 0, d: 160 },
-    { x: 2, y: 1, d: 240 },
-    { x: 2, y: 2, d: 320 },
-    { x: 1, y: 2, d: 400 },
-    { x: 0, y: 2, d: 480 },
-    { x: 0, y: 1, d: 560 },
+    { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 },
+    { x: 2, y: 1 }, { x: 2, y: 2 }, { x: 1, y: 2 },
+    { x: 0, y: 2 }, { x: 0, y: 1 },
   ];
+  const durMs = parseFloat(duration) * 1000;
   return (
     <span className="relative inline-block size-5">
       {dots.map((p, i) => (
@@ -724,13 +750,13 @@ function OrbitDots() {
           style={{
             left: `${p.x * 7}px`,
             top: `${p.y * 7}px`,
-            animation: `orbit-dot 1.2s ease-in-out ${p.d}ms infinite`,
+            animation: `orbit-dot ${duration} ease-in-out ${Math.round((i / dots.length) * durMs)}ms infinite`,
           }}
         />
       ))}
       <span
         className="absolute size-[3px] rounded-full bg-foreground"
-        style={{ left: "7px", top: "7px", animation: "pulse-dot 1.2s ease-in-out infinite" }}
+        style={{ left: "7px", top: "7px", animation: `pulse-dot ${duration} ease-in-out infinite` }}
       />
     </span>
   );
@@ -738,14 +764,33 @@ function OrbitDots() {
 
 
 
-function StatusFooter() {
+
+function StatusFooter({ speed, onSpeedChange }: { speed: "normal" | "fast"; onSpeedChange: (s: "normal" | "fast") => void }) {
   return (
     <div className="flex h-7 shrink-0 items-center justify-between px-3 text-[11.5px] text-muted-foreground">
       <div className="flex items-center gap-1.5"><HardDriveIcon size={11} /><span>Local</span></div>
-      <div className="flex items-center gap-1.5"><ContextRing /><span>8%</span></div>
+      <div className="flex items-center gap-3">
+        <div className="inline-flex items-center gap-0.5 rounded-full border border-border bg-card p-0.5 text-[10.5px]">
+          {(["normal", "fast"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => onSpeedChange(s)}
+              className={`rounded-full px-2 py-0.5 transition ${
+                speed === s ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+              }`}
+              aria-pressed={speed === s}
+              title={`Typing speed: ${s}`}
+            >
+              {s === "normal" ? "Normal" : "Fast"}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5"><ContextRing /><span>8%</span></div>
+      </div>
     </div>
   );
 }
+
 function ContextRing() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -96,8 +96,8 @@
   to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 @keyframes caret-blink {
   0%, 60% { opacity: 1; }
@@ -130,14 +130,27 @@
 .caret { display: inline-block; width: 7px; height: 1em; background: currentColor; vertical-align: -2px; animation: caret-blink 1.1s steps(1) infinite; }
 .mic-pulse { animation: pulse-mic 1.8s ease-out infinite; }
 
+/* Shimmer label — gradient sweep timed to the orbit dot cycle.
+   Default duration is set by --shimmer-duration so callers can sync it
+   to whatever speed the dot animation is running at. */
 .shimmer-text {
-  background: linear-gradient(90deg, var(--muted-foreground) 0%, var(--foreground) 50%, var(--muted-foreground) 100%);
-  background-size: 200% 100%;
+  --shimmer-duration: 1.2s;
+  background-image: linear-gradient(
+    100deg,
+    var(--muted-foreground) 0%,
+    var(--muted-foreground) 35%,
+    var(--foreground) 50%,
+    var(--muted-foreground) 65%,
+    var(--muted-foreground) 100%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: shimmer 2.4s linear infinite;
+  animation: shimmer var(--shimmer-duration) ease-in-out infinite;
 }
+
 
 /* Spring-like interactive feel for buttons */
 button, [role="button"] {
