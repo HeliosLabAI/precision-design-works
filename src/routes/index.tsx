@@ -709,7 +709,7 @@ function ThinkingIndicator() {
 
 function StatusFooter() {
   return (
-    <div className="flex h-7 shrink-0 items-center justify-between border-t border-border/60 px-3 text-[11.5px] text-muted-foreground">
+    <div className="flex h-7 shrink-0 items-center justify-between px-3 text-[11.5px] text-muted-foreground">
       <div className="flex items-center gap-1.5"><HardDriveIcon size={11} /><span>Local</span></div>
       <div className="flex items-center gap-1.5"><ContextRing /><span>8%</span></div>
     </div>
