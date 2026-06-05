@@ -269,7 +269,7 @@ function Density() {
                       />
                     </div>
                   </div>
-                  <StatusFooter />
+                  <StatusFooter speed={typingSpeed} onSpeedChange={setTypingSpeed} />
                 </>
               ) : (
                 <>
